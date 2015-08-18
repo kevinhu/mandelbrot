@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html class="gr__users_wpi_edu">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	<title>Mandelbrot renderer</title>
+	<style>
+		div {
+			background-color: black;
+			left: 50%;
+			top: 50%;
+			position: absolute;
+		}
+
+		body {
+			font-size: 0;
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			var body = document.getElementById('body');
+			var inverse_zoom_factor = 2; // reciprocal of the zoom level
+			var coord_x = 0; // initiate the scaled x-variable
+			var coord_y = 0; // initiate the scaled y-variable
+			var iteration = 0; // iteration value used to store number of iterations
+			function mandelbrot(pixelX, pixelY) { // determine whether or not a variable belongs to the Mandelbrot set
+				coord_x = 3.5 / screen.width * pixelX * inverse_zoom_factor; // determine the scaled x-coordinate based on true pixel coordinate value
+				coord_y = 2 / screen.height * pixelY * inverse_zoom_factor; // determine the scaled y-coordinate based on true pixel coordinate value
+				var x = 0.0; // initiate the x-variable for iteration
+				var y = 0.0; // initiate the x-variable for iteration
+				var power = 2; // exponent to raise x and y to
+				iteration = 0;
+				var xtemp = 0; // initiate the temporary x variable used in iteration
+				var max_iteration = 256; // the maximum number of iterations
+				while (Math.pow(x, power) + Math.pow(y, power) < 2 * 2 && iteration < max_iteration) {
+					xtemp = Math.pow(x, power) - Math.pow(y, power) + coord_x; // set the temporary x-coordinate value
+					y = 2 * x * y + coord_y; // set y for the next iteration
+					x = xtemp; // store the xtemp value in x for the next iteration
+					iteration += 1; // add one to the iteration amount
+				};
+				color = '#' + Math.floor(iteration / 100 * 16777215).toString(16); // convert the number of iterations to a hexadecimal number value to make the image pretty
+			};
+			var resolution = 100000; // the number of pixels in the image (scaled)
+			var height = Math.sqrt(resolution); // the scaled height of the image, square root of resolution since image is a square
+			var width = Math.sqrt(resolution); // the scaled width of theh image, square root of resolution since image is a square
+			var integer = 1; // used to loop through all coordinates in the image
+			var html = ''; // the object used to store the output HTML
+			var pixel_size = Math.ceil(screen.height / height); // the scaled size of each pixel of the image
+			var transx = 0; // the x - value by which each pixel is transformed by
+			var transy = 0; // the y - value byy which each pixel is transformed by
+			var color = "white";
+			html += "<div style='transform: translate(0px, 0px); background-color:white;'>1/ /0/ /1</div>"; // add the (0,0) pixel
+			// IMAGE GENERATION LOOP
+			for (var i = 0; i < resolution; i++) {
+				var ceiling_root = Math.ceil(Math.sqrt(integer)); // determine the square root of the next perfect square larger than the current pixel number
+				// if the closest square above is even
+				if (ceiling_root % 2 === 0) {
+					if (integer <= (Math.pow(ceiling_root, 2) - ceiling_root)) {
+						transx += pixel_size; // tells the generator to move to the right
+						mandelbrot(transx, transy)
+					} else {
+						transy += pixel_size; // tells the generator to move up
+						mandelbrot(transx, transy)
+					};
+					// if the closest square above is not even, it must be odd
+				} else {
+					if (integer <= Math.pow(ceiling_root, 2) && integer > Math.pow(ceiling_root, 2) - ceiling_root) {
+						transy -= pixel_size; // tells the generator to move down
+						mandelbrot(transx, transy);
+					} else {
+						transx -= pixel_size; // tells the generator to move to the left
+						mandelbrot(transx, transy);
+					};
+				};
+				// add the pixel to the html object
+				html += "<div".concat(" style = 'transform: translate(", String(transx), "px, ", String(transy), "px); background-color:", color, "; width:", pixel_size, "px;height:", pixel_size, "px'></div>");
+				integer += 1; // move on to the next pixel
+			};
+			body.innerHTML = html; // once the generator is finished, add the html object to the body
+		});
+	</script>
+</head>
+
+<body id="body"></body>
+
+</html>
