@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	<title>Loopy</title>
+	<style>
+		div {
+			margin: 2em;
+			margin-right: 0;
+			display: inline;
+		}
+
+		body {
+			margin: 0;
+			font-family: Helvetica;
+			padding: 0;
+		}
+
+		h2 {
+			margin: 1.5em;
+			margin-bottom: 1em;
+		}
+
+		.generator {
+			position: absolute;
+			margin: 2em;
+			z-index: 10;
+			background-color: white;
+			box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0, 0, 0, .12), 0 2px 4px rgba(0, 0, 0, .24);
+			padding-right: 2em;
+			border-radius: 4px;
+			height: auto;
+			width: auto;
+			transition: height 1s, width 1s;
+		}
+
+		input[type="submit"] {
+			background-color: #3498db;
+			color: white;
+			margin-left: 2em;
+			margin-bottom: 0.5em;
+			font-size: 1em;
+			border: none;
+			padding: 8px;
+			box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0, 0, 0, .12), 0 2px 4px rgba(0, 0, 0, .24);
+			transition: all 200ms linear;
+			border-radius: 4px;
+		}
+
+		input[type="submit"]:hover {
+			background-color: #2980b9;
+			cursor: pointer;
+		}
+
+		input[type="submit"]:focus {
+			outline: none;
+		}
+
+		input[type="reset"] {
+			background-color: #e74c3c;
+			color: white;
+			margin-left: 2em;
+			margin-bottom: 0.5em;
+			font-size: 1em;
+			border: none;
+			padding: 8px;
+			box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0, 0, 0, .12), 0 2px 4px rgba(0, 0, 0, .24);
+			transition: all 200ms linear;
+			border-radius: 4px;
+		}
+
+		input[type="reset"]:hover {
+			background-color: #c0392b;
+			cursor: pointer;
+		}
+
+		input[type="reset"]:focus {
+			outline: none;
+		}
+
+		input[type="text"] {}
+
+		#rectangle {
+			border: solid 1px #2ecc71;
+			position: absolute;
+			margin: 0px;
+		}
+
+		#minimize {
+			border: solid 1px black;
+			border-radius: 4px;
+			margin-left: 1em;
+			margin-top: 1em;
+			text-align: center;
+			padding-left: 1em;
+			padding-right: 1em;
+		}
+
+		.minimized {
+			height: 2em;
+			width: 2em;
+			background-color: #2ecc71;
+		}
+
+		.hidden {
+			visibility: hidden;
+			display: none;
+		}
+	</style>
+	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			//make the canvas fullscreen
+			$('canvas').attr('height', screen.height);
+			$('canvas').attr('width', screen.width);
+			//display the coordinates the mouse is on
+			$(document).on('mousemove', function(e) {
+				$('#rectangle').css({
+					left: e.pageX - screen.width / 4,
+					top: e.pageY - screen.height / 4
+				});
+				zoom_x = (e.pageX - (screen.width / 2)) / $('#zoom').val() / 400 + parseFloat(current_center_x);
+				zoom_y = (e.pageY - (screen.height / 2)) / $('#zoom').val() / -400 + parseFloat(current_center_y);
+				$('#centerx').html("X: " + zoom_x);
+				$('#centery').html("Y: " + zoom_y);
+			});
+			var zoom = 1; //variable to store the zoom level
+			var zoom_x = 0; //the x-coordinate at the center of the zoom
+			var zoom_y = 0; //the x-coordinate at the center of the zoom
+			var current_center_x = 0; //the current x-coordinate of the screen center
+			var current_center_y = 0; //the current y-coordinate of the screen center
+			$("#resolution").attr('value', screen.height * screen.width / 8); //set the default resolution as 1/4 of that of the screen
+			$('.generator').draggable({ //allow the form element to be dragged across the screen
+				containment: "body",
+				stack: ".drag"
+			});
+			// this function is used to determine the color relative to number of iterations for a pixel
+			function float_color(float) {
+				var color_part_dec = 255 * float;
+				var color_part_hex = Number(parseInt(color_part_dec, 10)).toString(16);
+				return "#" + color_part_hex + color_part_hex + color_part_hex;
+			}
+			// renders the image
+			function render(center_x, center_y, zoom_factor) {
+				var page_ratio = screen.height / screen.width // the height/width ratio of the screen
+				var resolution = eval($('#resolution').val()); // get the resolution of the image from the form
+				// set the width and height of the selector rectangle to 1/2 of the image's width and height
+				$('#rectangle').css({
+					width: screen.width / 2,
+					height: screen.height / 2
+				});
+				var pixel_length = Math.ceil(screen.height / Math.sqrt(resolution * page_ratio)); // set the scaled size of each pixel
+				// establish the center and bounds of the image
+				var origin_x = screen.width / 2;
+				var origin_y = screen.height / 2;
+				var boundx = screen.width; // the x - boundary
+				var boundy = screen.height; // the y - boundary
+				var cx = 5 / 6 * center_x * origin_x / 2 * zoom_factor;
+				var cy = 5 / 6 * center_y * origin_y / 2 * zoom_factor;
+				//iteration variables for each pixel
+				var transx = 0;
+				var transy = 0;
+				//configure the canvas
+				var canvas = document.getElementById("canvas");
+				var ctx = canvas.getContext("2d");
+				ctx.fillStyle = color;
+				var color = "black";
+				ctx.fillRect(0, 0, pixel_length, pixel_length); // fill the origin pixel
+				var coloring = $('#coloring').val(); // get the coloring value from the user, can be greyscale or color
+				var max_iteration = $('#iterations').val(); // the maximum number of iterations
+
+				function mandelbrot(pixelX, pixelY) { // determine whether or not a variable belongs to the Mandelbrot set
+					coord_x = 4.8 * pixelX / zoom_factor; // determine the scaled x-coordinate based on true pixel coordinate value
+					coord_y = 2.7 * pixelY / zoom_factor; // determine the scaled y-coordinate based on true pixel coordinate value
+					var x = 0.0; // initiate the x-variable for iteration
+					var y = 0.0; // initiate the x-variable for iteration
+					iteration = 0;
+					var xtemp = 0; // initiate the temporary x variable used in iteration
+					while (Math.pow(x, 2) + Math.pow(y, 2) < 2 * 2 && iteration < max_iteration) {
+						xtemp = x * x - y * y + coord_x; // set the temporary x-coordinate value
+						y = 2 * x * y + coord_y; // set y for the next iteration
+						x = xtemp; // store the xtemp value in x for the next iteration
+						iteration += 1; // add one to the iteration amount
+					};
+					if (coloring === "Greyscale") {
+						return float_color(iteration / max_iteration); // convert the number of iterations to an rgb greyscale value
+					} else {
+						return '#' + Math.floor(iteration / max_iteration * 16777215).toString(16); // convert the number of iterations to a hexadecimal color value
+					};
+				};
+				//loop over each pixel of the rendering
+				function draw() {
+					var loop = setInterval(function() {
+						for (transx = 0; transx < boundx; transx += pixel_length) {
+							ctx.fillStyle = mandelbrot((transx - origin_x + cx) / (screen.width), (transy - origin_y + cy) / (screen.height));
+							ctx.fillRect(transx, transy, pixel_length, pixel_length);
+						};
+						transy += pixel_length;
+						if (transy === boundy) {
+							clearInterval(loop);
+						};
+					}, 0.01);
+				};
+				draw();
+			};
+			//render image when form is submitted
+			$(".generator").submit(function(event) {
+				for (var i = 1; i < 99999; i++) {
+					window.clearInterval(i);
+				};
+				event.preventDefault();
+				zoom_x = $('#cx').val();
+				zoom_y = $('#cy').val();
+				//render($('#cx').val()-1/5$('#zoom').val()), $('#cy').val()-Math.pow(1/5,$('#zoom').val()), $('#zoom').val());
+				render(zoom_x, zoom_y, zoom);
+				document.getElementById("canvas").getContext("2d").clearRect(0, 0, screen.width, screen.height);
+				current_center_x = $('#cx').val();
+				current_center_y = $('#cy').val();
+			});
+			//zoom in when the user selects a portion of the image
+			$('#rectangle').click(function(e) {
+				for (var i = 1; i < 99999; i++) {
+					window.clearInterval(i);
+				};
+				document.getElementById("canvas").getContext("2d").clearRect(0, 0, screen.width, screen.height);
+				zoom *= 2;
+				zoom_x = (e.pageX - (screen.width / 2)) / $('#zoom').val() / (screen.width / 4.8) + parseFloat(current_center_x);
+				zoom_y = (e.pageY - (screen.height / 2)) / $('#zoom').val() / (screen.height / 2.7) + parseFloat(current_center_y);
+				render(zoom_x, zoom_y, zoom);
+				$('#zoom').attr('value', zoom);
+				$('#cx').attr('value', zoom_x);
+				$('#cy').attr('value', zoom_y);
+				current_center_x = zoom_x;
+				current_center_y = zoom_y;
+
+			});
+			$('#reset').click(function() {
+				for (var i = 1; i < 99999; i++) {
+					window.clearInterval(i);
+				};
+				document.getElementById("canvas").getContext("2d").clearRect(0, 0, screen.width, screen.height);
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<form class="generator">
+		<h2 class="hide">Mandelbrot set generator</h2>
+		<div class="hide">Iterations: </div>
+		<input class="hide" id="iterations" type="text" value="250">
+		<br class="hide">
+		<br class="hide">
+		<div class="hide">Zoom factor: </div>
+		<input class="hide" id="zoom" type="text" value="1">
+		<br class="hide">
+		<br class="hide">
+		<div class="hide">Center X (between -1.5 and 1): </div>
+		<input class="hide" id="cx" type="text" value="-1">
+		<br class="hide">
+		<br class="hide">
+		<div class="hide">Center Y (between 1 and -1): </div>
+		<input class="hide" id="cy" type="text" value="0">
+		<br class="hide">
+		<br class="hide">
+		<div class="hide">Resolution (number of pixels in image): </div>
+		<input class="hide" id="resolution" type="text">
+		<br class="hide">
+		<br class="hide">
+		<div>Color: </div>
+		<select id="coloring">
+			<option value="Greyscale">Greyscale</option>
+			<option value="Color">Color</option>
+		</select>
+		<input class="hide" type="submit" value="Generate" class="hide">
+		<input type="reset" value="Reset" id="reset">
+		<br class="hide">
+		<br class="hide">
+
+		<div id="centerx"></div>
+		<div id="centery"></div>
+		<br>
+		<br>
+	</form>
+	<div id="rectangle"></div>
+	<canvas id="canvas" width="0" height="0"></canvas>
+</body>
+</html>
