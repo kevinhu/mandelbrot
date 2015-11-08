@@ -268,7 +268,7 @@
 				var canvas = document.getElementById("canvas");
 				var data = canvas.toDataURL("image/png");
 				var w = window.open('about:blank','Image');
-				w.document.write("<img src='"+data+"' alt='from canvas'/>");
+				w.document.write("<img src='"+data+"' alt='from canvas'/><style>body{margin:0;padding:0}</style>");
 			});
 		});
 	</script>
@@ -304,7 +304,7 @@
 		</select>
 		<button class="hide" id="generate" class="hide"><i class="icon-cogs"></i> Generate</button>
 		<button type="reset" id="reset"><i class="icon-undo"></i> Reset</button>
-		<button class="save"><i class="icon-save"></i> Save image</button>
+		<button class="save" type="button"><i class="icon-save"></i> Save image</button>
 		<br class="hide">
 		<br class="hide">
 
