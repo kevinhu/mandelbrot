@@ -234,20 +234,24 @@
 				$('#cy').attr('value', zoom_y);
 				current_center_x = zoom_x;
 				current_center_y = zoom_y;
-
 			});
 			$('#reset').click(function() {
+				console.log("hello");
 				for (var i = 1; i < 99999; i++) {
 					window.clearInterval(i);
 				};
 				document.getElementById("canvas").getContext("2d").clearRect(0, 0, screen.width, screen.height);
+				$('#cx').attr('value', "-1");
+				$('#cy').attr('value', "0");
+				$('#zoom').attr('value', "1");
+				$('#resolution').attr('value', screen.height * screen.width / 8);
 			});
 		});
 	</script>
 </head>
 
 <body>
-	<form class="generator">
+	<form class="generator" id="form">
 		<h2 class="hide">Mandelbrot set generator</h2>
 		<div class="hide">Iterations: </div>
 		<input class="hide" id="iterations" type="text" value="250">
@@ -276,6 +280,7 @@
 		</select>
 		<input class="hide" type="submit" value="Generate" class="hide">
 		<input type="reset" value="Reset" id="reset">
+		<button>Save image</button>
 		<br class="hide">
 		<br class="hide">
 
@@ -287,4 +292,5 @@
 	<div id="rectangle"></div>
 	<canvas id="canvas" width="0" height="0"></canvas>
 </body>
+
 </html>
